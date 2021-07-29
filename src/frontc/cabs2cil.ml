@@ -5949,8 +5949,8 @@ and doDecl (isglobal: bool) : A.definition -> chunk = function
               let precisionOp = getPrecision !currentFunctionFDEC.svar.vattr in
               if precisionOp != None then
                 let precision = Option.get precisionOp in
-                if precision < 0 || precision > 2 then
-                  E.s (error "Precision should be between [0,3] but is %d" precision);
+                if precision < 0 || precision > 3 then
+                  E.s (error "Precision should be in [0,3] but is %d" precision);
 
 
               (* If this is the definition of an extern inline then we change
