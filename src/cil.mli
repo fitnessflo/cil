@@ -925,6 +925,8 @@ and stmt = {
      * the CFG is computed. *)
     mutable preds: stmt list;
     (** The inverse of the succs function. *)
+    mutable fallthrough: stmt option;
+    (** The fallthrough successor statement computed from the context of this statement in {!Cil.computeCFGInto}. Useful for the syntactic successor of Goto and Loop. *)
   }
 
 (** Labels *)
@@ -1112,6 +1114,7 @@ and location = {
     line: int;		   (** The line number. -1 means "do not know" *)
     file: string;          (** The name of the source file*)
     byte: int;             (** The byte position in the source file *)
+    column: int;           (** The column number *)
 }
 
 

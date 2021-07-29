@@ -736,6 +736,7 @@ and stmt = {
                                            and the context in which this
                                            statement appears *)
     mutable preds: stmt list;          (** The inverse of the succs function*)
+    mutable fallthrough: stmt option;  (** The fallthrough successor statement computed from the context of this statement in {!Cil.computeCFGInto}. Useful for the syntactic successor of Goto and Loop. *)
   }
 
 (** Labels *)
@@ -878,6 +879,7 @@ and location = {
     line: int;		   (** The line number. -1 means "do not know" *)
     file: string;          (** The name of the source file*)
     byte: int;             (** The byte position in the source file *)
+    column: int;           (** The column number *)
 }
 
 (* Type signatures. Two types are identical iff they have identical
@@ -892,7 +894,8 @@ and typsig =
 
 let locUnknown = { line = -1;
 		   file = "";
-		   byte = -1;}
+		   byte = -1;
+       column = -1}
 
 (* A reference to the current location *)
 let currentLoc : location ref = ref locUnknown
@@ -909,7 +912,11 @@ let compareLoc (a: location) (b: location) : int =
     let linecmp = a.line - b.line in
     if linecmp != 0
     then linecmp
-    else a.byte - b.byte
+    else
+      let columncmp = a.column - b.column in
+      if columncmp != 0
+      then columncmp
+      else a.byte - b.byte
 
 let argsToList : (string * typ * attributes) list option
                   -> (string * typ * attributes) list
@@ -1317,7 +1324,7 @@ let isSigned = function
 let mkStmt (sk: stmtkind) : stmt =
   { skind = sk;
     labels = [];
-    sid = -1; succs = []; preds = [] }
+    sid = -1; succs = []; preds = []; fallthrough = None }
 
 let mkBlock (slst: stmt list) : block =
   { battrs = []; bstmts = slst; }
@@ -1621,7 +1628,7 @@ let typeOfRealAndImagComponents t =
       | FComplexLongDouble -> FLongDouble
     in
     TFloat (newfkind fkind, attrs)
-  | _ -> E.s (E.bug "unexpected non-numerical type for argument to __real__")
+  | _ -> E.s (E.bug "unexpected non-numerical type for argument to __real__/__imag__ ")
 
 (** for an fkind, return the corresponding complex fkind *)
 let getComplexFkind = function
@@ -3289,7 +3296,8 @@ let initMsvcBuiltins () : unit =
 (** This is used as the location of the prototypes of builtin functions. *)
 let builtinLoc: location = { line = 1;
                              file = "<compiler builtins>";
-                             byte = 0;}
+                             byte = 0;
+                             column = 0}
 
 
 
@@ -6681,6 +6689,7 @@ let rec succpred_block b fallthrough rlabels =
 
 
 and succpred_stmt s fallthrough rlabels =
+  s.fallthrough <- fallthrough;
   match s.skind with
     Instr _ -> trylink s fallthrough
   | Return _ -> ()
