@@ -5940,17 +5940,18 @@ and doDecl (isglobal: bool) : A.definition -> chunk = function
               !currentFunctionFDEC.svar.vtype <- ftyp;
               !currentFunctionFDEC.svar.vattr <- funattr;
 
+              (* Get precision and change if in range [0,3] *)
               let rec getPrecision ls =
                 match ls with
                 | [] -> None
                 | Attr("precision", [ AInt ap ]) :: ls' -> Some ap
                 | l :: ls' -> getPrecision ls'
               in
-              let precisionOp = getPrecision !currentFunctionFDEC.svar.vattr in
-              if precisionOp != None then
-                let precision = Option.get precisionOp in
+              let p = getPrecision !currentFunctionFDEC.svar.vattr in
+              (if p != None then
+                let precision = Option.get p in
                 if precision < 0 || precision > 3 then
-                  E.s (error "Precision should be in [0,3] but is %d" precision);
+                  E.s (error "Precision should be in [0,3] but is %d" precision));
 
 
               (* If this is the definition of an extern inline then we change
